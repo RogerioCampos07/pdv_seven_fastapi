@@ -1,12 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from utils import TipoMovimentacao
 from uuid import UUID, uuid4
 
 from sqlalchemy import ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.orm import (
     Mapped,
-    mapped_as_dataclass,
     mapped_column,
     registry,
     relationship,
@@ -15,26 +14,17 @@ from sqlalchemy.orm import (
 table_registry = registry()
 
 
-class TipoMovimentacao(str, Enum):
-    ENTRADA = 'entrada'
-    VENDA = 'venda'
-    AJUSTE = 'ajuste'
-    PERDA = 'perda'
 
 
-@mapped_as_dataclass(table_registry)
+@table_registry.mapped_as_dataclass
 class Categoria:
     __tablename__ = 'categorias'
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default_factory=uuid4)
     nome: Mapped[str] = mapped_column(nullable=False)
 
-    produtos: Mapped[list['Produto']] = relationship(
-        'Produto', back_populates='categoria', init=False
-    )
 
-
-@mapped_as_dataclass(table_registry)
+@table_registry.mapped_as_dataclass
 class Produto:
     __tablename__ = 'produtos'
 
@@ -57,10 +47,6 @@ class Produto:
 
     quantidade: Mapped[int] = mapped_column(nullable=False, default=0)
 
-    data_criacao: Mapped[datetime] = mapped_column(
-        init=False, server_default=func.now()
-    )
-
     categoria: Mapped['Categoria'] = relationship(
         'Categoria', back_populates='produtos', init=False
     )
@@ -70,7 +56,7 @@ class Produto:
     )
 
 
-@mapped_as_dataclass(table_registry)
+@table_registry.mapped_as_dataclass
 class MovimentacaoEstoque:
     __tablename__ = 'movimentacoes_estoque'
 
