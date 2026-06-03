@@ -1,39 +1,47 @@
 from datetime import datetime
 from decimal import Decimal
-from utils import TipoMovimentacao
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4  
 
-from sqlalchemy import ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Uuid, func  
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
     registry,
     relationship,
 )
+from typing import List
+from .utils import TipoMovimentacao
 
 table_registry = registry()
-
-
 
 
 @table_registry.mapped_as_dataclass
 class Categoria:
     __tablename__ = 'categorias'
 
-    id: Mapped[UUID] = mapped_column(primary_key=True, default_factory=uuid4)
+    
+    id: Mapped[UUID] = mapped_column(
+        Uuid, 
+        primary_key=True, 
+        default=uuid4, 
+        init=False
+    )
     nome: Mapped[str] = mapped_column(nullable=False)
+    produtos: Mapped[List["Produto"]] = relationship(
+        back_populates="categoria", 
+        default_factory=list
+    )
 
 
 @table_registry.mapped_as_dataclass
 class Produto:
     __tablename__ = 'produtos'
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True, default_factory=uuid4, init=False
-    )
+    
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4, init=False)
 
     categoria_id: Mapped[UUID] = mapped_column(
-        ForeignKey('categorias.id', ondelete='RESTRICT'), nullable=False
+        Uuid, ForeignKey('categorias.id', ondelete='RESTRICT'), nullable=False
     )
 
     codigo_de_barras: Mapped[str] = mapped_column(
@@ -42,17 +50,17 @@ class Produto:
 
     nome: Mapped[str] = mapped_column(nullable=False)
 
-    # Precisão decimal para evitar erros em centavos
     preco: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
 
     quantidade: Mapped[int] = mapped_column(nullable=False, default=0)
 
+    
     categoria: Mapped['Categoria'] = relationship(
-        'Categoria', back_populates='produtos', init=False
+        back_populates='produtos', init=False
     )
 
     movimentacoes: Mapped[list['MovimentacaoEstoque']] = relationship(
-        'MovimentacaoEstoque', back_populates='produto', init=False
+        back_populates='produto', init=False
     )
 
 
@@ -60,12 +68,10 @@ class Produto:
 class MovimentacaoEstoque:
     __tablename__ = 'movimentacoes_estoque'
 
-    id: Mapped[UUID] = mapped_column(
-        primary_key=True, default_factory=uuid4, init=False
-    )
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4, init=False)
 
     produto_id: Mapped[UUID] = mapped_column(
-        ForeignKey('produtos.id', ondelete='CASCADE'), nullable=False
+        Uuid, ForeignKey('produtos.id', ondelete='CASCADE'), nullable=False
     )
 
     quantidade: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -79,5 +85,5 @@ class MovimentacaoEstoque:
     )
 
     produto: Mapped['Produto'] = relationship(
-        'Produto', back_populates='movimentacoes', init=False
+        back_populates='movimentacoes', init=False
     )
